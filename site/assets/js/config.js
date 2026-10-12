@@ -7,6 +7,10 @@ export const CONFIG = {
   // Fallback inbox when no endpoint is set.
   contactEmail: "max@midendelta.com",
 
+  // Learning platform channels. Leave empty to hide the links; fill in once the channels are public.
+  youtubeUrl: "",
+  xUrl: "",
+
   // Public strategy research: a simulated backtest of a generic ETH cash and carry.
   performanceUrl: "performance.html",
 };

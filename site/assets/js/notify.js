@@ -1,4 +1,4 @@
-// Launch notification with the 20% offer. Opens by itself once when a visitor enters the site
+// Launch notification for the High Finance learning platform (plus the 20% bot offer). Opens by itself once when a visitor enters the site
 // (arrival from another site, a link or an app like Instagram), not on every page change, and without
 // storing anything on the device: "entry" is read from the referrer. Any [data-notify] button opens it too.
 import { CONFIG } from "./config.js";
@@ -12,20 +12,20 @@ function html() {
     <div class="notify-box">
       <button type="button" class="notify-close" aria-label="Close">×</button>
       <div class="ask">
-        <span class="deal">−20%</span>
-        <h2 id="notify-title">Get notified at launch.</h2>
-        <p>Bot 01 is in development. Leave your email and we'll send your 20% discount code when it launches.</p>
+        <span class="deal">Free</span>
+        <h2 id="notify-title">High Finance, explained. Launching soon.</h2>
+        <p>Our learning platform breaks down how hedge funds actually make money, with real data and no fluff. Leave your email and we'll tell you the day it goes live. Early members also get 20% off the bot at launch.</p>
         <form novalidate>
           <input type="email" name="email" autocomplete="email" inputmode="email" placeholder="you@email.com" aria-label="Email address" required />
-          <button class="btn btn-primary" type="submit">Notify me</button>
+          <button class="btn btn-primary" type="submit">Notify me at launch</button>
           <p class="err" role="alert"></p>
-          <p class="fine">Launch emails only, unsubscribe anytime. See the <a href="datenschutz.html">privacy policy</a>.</p>
+          <p class="fine">Launch and course emails only, unsubscribe anytime. See the <a href="datenschutz.html">privacy policy</a>.</p>
         </form>
       </div>
       <div class="done" hidden tabindex="-1">
-        <span class="deal">−20%</span>
+        <span class="deal">✓</span>
         <h2 style="margin-top:16px">You're on the list.</h2>
-        <p>We'll email your code when Bot 01 launches. Until then, scroll through how it works.</p>
+        <p>We'll email you the day the platform launches, with your 20% bot code. Until then, scroll through the first lesson: how a cash and carry works.</p>
       </div>
     </div>
   </div>`;
@@ -36,7 +36,7 @@ async function send(email) {
   const res = await fetch(CONFIG.formEndpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ form: "launch-notify", _subject: `Launch notify (20%): ${email}`, email, offer: "20% off at launch" }),
+    body: JSON.stringify({ form: "platform-launch", _subject: `Platform launch notify: ${email}`, email, interest: "High Finance learning platform", offer: "20% off the bot at launch" }),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
 }
@@ -82,7 +82,7 @@ export function initNotify(page) {
       done.hidden = false; done.focus({ preventScroll: true });
     } catch (x) {
       console.error(x);
-      btn.disabled = false; btn.textContent = "Notify me";
+      btn.disabled = false; btn.textContent = "Notify me at launch";
       err.textContent = "That didn't go through. Please try again in a moment.";
     }
   });

@@ -6,13 +6,13 @@ Static site with no build step. Everything is self-hosted (no CDN, no Google Fon
 ```
 index.html       scroll story: piggy bank (your account) -> spot -> short -> delta 0 -> funding -> specs chart; setup, roadmap
 pricing.html     plans (indicative early-access prices) and the waitlist form (Formspree)
-learn.html       video course outline and the AI helper (both coming with early access)
+learn.html       the High Finance learning platform: formats, three course tracks, AI helper (launching soon)
 performance.html public strategy research: simulated ETH carry backtest at 3x
 team.html        founders (edit assets/js/team.js, photos in assets/team/)
 impressum.html, datenschutz.html   legal notice and privacy policy (German)
 assets/js/scene.js   the 3D scene, driven by story time t (0 -> 11)
 assets/js/chart.js   trading-terminal chart in the specs (ETH candles, simulated position, funding), plays with the scroll
-assets/js/notify.js  launch popup (20% off): opens once on arrival (referrer check, nothing stored), [data-notify] opens it
+assets/js/notify.js  platform launch popup (email, 20% bot code): opens once on arrival (referrer check, nothing stored), [data-notify] opens it
 assets/data/eth-carry.json  3-day ETH candles (Hyperliquid API) joined with the simulated funding series
 assets/js/config.js  form endpoint, contact email
 ```
