@@ -19,5 +19,5 @@ Principles that keep this a software product rather than a financial service:
 Preview the site locally:
 
 ```bash
-python3 -m http.server 5176 --directory site
+python3 serve.py      # Windows: py serve.py  (sets JS MIME types, plain http.server breaks on Windows)
 ```
