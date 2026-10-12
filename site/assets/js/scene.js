@@ -539,7 +539,9 @@ export async function createScene(canvas, { reducedMotion = false } = {}) {
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
     if (!visible) return;
     // damped follow: scroll input feels weighted, like a camera on a dolly
-    tNow = reducedMotion ? tTarget : tNow + (tTarget - tNow) * (1 - Math.exp(-dt * 4));
+    if (!Number.isFinite(tTarget)) tTarget = 0;
+    if (!Number.isFinite(tNow)) tNow = tTarget; // self-heal: one bad value must never freeze the story
+    tNow = reducedMotion ? tTarget : tNow + (tTarget - tNow) * (1 - Math.exp(-Math.max(0, dt) * 4));
     if (Math.abs(tTarget - tNow) < 0.0005) tNow = tTarget;
     update(dt, clock.getElapsedTime());
     renderer.render(scene, camera);
@@ -547,8 +549,8 @@ export async function createScene(canvas, { reducedMotion = false } = {}) {
   raf = requestAnimationFrame(frame);
 
   return {
-    setProgress(t) { tTarget = t; },
-    jump(t) { tTarget = tNow = t; },
+    setProgress(t) { if (Number.isFinite(t)) tTarget = t; },
+    jump(t) { if (Number.isFinite(t)) tTarget = tNow = t; },
     setVisible(v) { visible = v; },
     onTick(cb) { onTick = cb; },
     get t() { return tNow; },

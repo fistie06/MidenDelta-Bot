@@ -29,7 +29,14 @@ railBtns.forEach((b, i) => {
 const storyTop = () => story.getBoundingClientRect().top + scrollY;
 const storyLen = () => story.offsetHeight - innerHeight;
 const yForT = (t) => storyTop() + (t / T_MAX) * storyLen();
-const tForScroll = () => Math.min(T_MAX, Math.max(0, ((scrollY - storyTop()) / storyLen()) * T_MAX));
+// Guard: a page loaded in a zero-size viewport (background tab, hidden in-app browser, prerender) has storyLen 0,
+// and 0/0 = NaN would freeze the whole story invisible.
+const tForScroll = () => {
+  const len = storyLen();
+  if (!(len > 0)) return 0;
+  const t = ((scrollY - storyTop()) / len) * T_MAX;
+  return Number.isFinite(t) ? Math.min(T_MAX, Math.max(0, t)) : 0;
+};
 
 // Copy eases in; items marked data-blur also resolve from soft focus, like a lens pulling focus.
 const ease = (x) => 1 - Math.pow(1 - x, 3);
