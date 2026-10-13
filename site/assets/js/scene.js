@@ -58,10 +58,12 @@ function sampleKF(t, mobile) {
 }
 
 // ---------------------------------------------------------------- studio lighting
-// A dark room with strip softboxes: gives chrome and glass the long, clean reflections of a product shoot.
+// A bright room with strip softboxes. The room itself is now light, so chrome
+// and glass pick up a pale surround instead of reading as black cutouts against
+// the paper page; the strips still give them the long clean highlights.
 function studioEnvironment(renderer) {
   const env = new THREE.Scene();
-  env.add(new THREE.Mesh(new THREE.BoxGeometry(40, 20, 40), new THREE.MeshBasicMaterial({ color: 0x0a0a0a, side: THREE.BackSide })));
+  env.add(new THREE.Mesh(new THREE.BoxGeometry(40, 20, 40), new THREE.MeshBasicMaterial({ color: 0xd7d3cb, side: THREE.BackSide })));
   const box = (w, h, power, pos) => {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ color: new THREE.Color(power, power, power), side: THREE.DoubleSide }));
     m.position.set(...pos); m.lookAt(0, 0, 0); env.add(m);
@@ -71,7 +73,7 @@ function studioEnvironment(renderer) {
   box(2.4, 10, 3, [10, 1, -2]);    // tall right strip, weaker
   box(8, 3, 1.4, [0, 0.5, 12]);    // soft front fill
   box(24, 0.35, 5, [0, 2.5, -14]); // hairline rim behind
-  box(26, 26, 0.35, [0, 9.8, 0]);  // faint ceiling bounce so metals never go fully black
+  box(26, 26, 1.1, [0, 9.8, 0]);   // ceiling bounce, stronger now that the room is light
   const pm = new THREE.PMREMGenerator(renderer);
   const tex = pm.fromScene(env, 0.015).texture;
   pm.dispose();
@@ -150,15 +152,15 @@ const radialTexture = (stops) => canvasTex((g, s) => {
 // Data labels in the scene: filled mark = long, hollow = short, ring = net.
 function labelSprite(title, sub, mark) {
   const tex = canvasTex((g, w, h) => {
-    g.fillStyle = "rgba(0,0,0,.72)"; g.strokeStyle = "rgba(255,255,255,.28)"; g.lineWidth = 2;
+    g.fillStyle = "rgba(250,248,244,.94)"; g.strokeStyle = "rgba(20,26,46,.22)"; g.lineWidth = 2;
     g.beginPath(); g.roundRect(3, 3, w - 6, h - 6, 30); g.fill(); g.stroke();
-    g.fillStyle = "#fff"; g.strokeStyle = "#fff"; g.lineWidth = 3;
+    g.fillStyle = "#141a2e"; g.strokeStyle = "#141a2e"; g.lineWidth = 3;
     g.beginPath(); g.arc(44, h / 2 - 20, 9, 0, Math.PI * 2);
     if (mark === "fill") g.fill(); else g.stroke();
     if (mark === "ring") { g.beginPath(); g.arc(44, h / 2 - 20, 3, 0, Math.PI * 2); g.fill(); }
     g.font = "500 38px Geist, sans-serif"; g.textBaseline = "middle";
     g.fillText(title, 68, h / 2 - 20);
-    g.fillStyle = "#a8a8a8"; g.font = "400 30px 'Geist Mono', monospace";
+    g.fillStyle = "#6b7589"; g.font = "400 30px 'Geist Mono', monospace";
     g.fillText(sub, 34, h / 2 + 28);
   }, { w: 540, h: 140 });
   const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, toneMapped: false, opacity: 0 });
@@ -172,16 +174,18 @@ function labelSprite(title, sub, mark) {
 export async function createScene(canvas, { reducedMotion = false } = {}) {
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
   renderer.toneMapping = THREE.AgXToneMapping;
-  renderer.toneMappingExposure = 1.25;
+  renderer.toneMappingExposure = 1.0;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // PCFSoft samples the shadow map many times per fragment. At this scale the
+  // difference is invisible and the cost is not.
+  renderer.shadowMap.type = THREE.PCFShadowMap;
 
   await Promise.race([document.fonts?.ready, new Promise((r) => setTimeout(r, 1500))]);
 
   const scene = new THREE.Scene();
   scene.environment = studioEnvironment(renderer);
-  scene.environmentIntensity = 1.35;
+  scene.environmentIntensity = 1.1;
 
   const camera = new THREE.PerspectiveCamera(32, 1, 0.1, 200);
   scene.add(camera);
@@ -190,7 +194,7 @@ export async function createScene(canvas, { reducedMotion = false } = {}) {
   const backdropMat = new THREE.ShaderMaterial({
     depthWrite: false, toneMapped: false,
     uniforms: {
-      uC1: { value: new THREE.Color("#2b2b2b") }, uC2: { value: new THREE.Color("#000000") },
+      uC1: { value: new THREE.Color("#ffffff") }, uC2: { value: new THREE.Color("#d6d1c6") },
       uCenter: { value: new THREE.Vector2(0.5, 0.5) }, uAspect: { value: 1 }, uGrid: { value: 0 }, uDpr: { value: 1 },
     },
     vertexShader: `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.); }`,
@@ -201,10 +205,10 @@ export async function createScene(canvas, { reducedMotion = false } = {}) {
         float r = length(d);
         vec3 col = mix(uC1, uC2, smoothstep(0.0, 0.68, r));
         vec2 k = (vUv - uCenter - vec2(0.12, 0.24)) * vec2(uAspect, 1.);
-        col += uC1 * 0.55 * exp(-dot(k, k) * 18.);
+        col += vec3(.035) * exp(-dot(k, k) * 18.);
         vec2 g = fract(gl_FragCoord.xy / (24. * uDpr)) - .5;
         float dotm = smoothstep(.1, .04, length(g));
-        col += vec3(.05) * dotm * uGrid * (1. - smoothstep(.05, .75, r));
+        col -= vec3(.045) * dotm * uGrid * (1. - smoothstep(.05, .75, r));
         col += (hash(gl_FragCoord.xy) - .5) / 180.;
         gl_FragColor = vec4(col, 1.);
         #include <colorspace_fragment>
@@ -215,27 +219,27 @@ export async function createScene(canvas, { reducedMotion = false } = {}) {
   backdrop.renderOrder = -10;
   camera.add(backdrop);
 
-  const key = new THREE.DirectionalLight(0xffffff, 2.4);
+  const key = new THREE.DirectionalLight(0xffffff, 2.0);
   key.position.set(3, 8, 4);
   key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048);
+  key.shadow.mapSize.set(1024, 1024);
   Object.assign(key.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5, near: 1, far: 25 });
   key.shadow.bias = -0.0004; key.shadow.normalBias = 0.02;
   scene.add(key, key.target);
-  const rim = new THREE.DirectionalLight(0xffffff, 1.2); rim.position.set(-5, 3, -5); scene.add(rim);
+  const rim = new THREE.DirectionalLight(0xffffff, 0.7); rim.position.set(-5, 3, -5); scene.add(rim);
 
-  const floor = new THREE.Mesh(new THREE.CircleGeometry(4.6, 96), new THREE.ShadowMaterial({ opacity: 0.55 }));
+  const floor = new THREE.Mesh(new THREE.CircleGeometry(4.6, 48), new THREE.ShadowMaterial({ opacity: 0.22 }));
   floor.rotation.x = -Math.PI / 2; floor.position.y = -1.61; floor.receiveShadow = true;
   scene.add(floor);
 
   // ------------------------------------------------ materials
   const pigGlass = new THREE.MeshPhysicalMaterial({
     color: 0xffffff, metalness: 0, roughness: 0.02, transmission: 1, thickness: 0.55, ior: 1.5,
-    attenuationColor: new THREE.Color("#e8e8e8"), attenuationDistance: 8,
-    clearcoat: 1, clearcoatRoughness: 0.02, specularIntensity: 1, envMapIntensity: 1.35, transparent: true,
+    attenuationColor: new THREE.Color("#b9c0d4"), attenuationDistance: 2.6,
+    clearcoat: 1, clearcoatRoughness: 0.02, specularIntensity: 1, envMapIntensity: 1.5, transparent: true,
   });
-  const lacquer = new THREE.MeshPhysicalMaterial({ color: 0x0b0b0b, roughness: 0.3, clearcoat: 1, clearcoatRoughness: 0.05, transparent: true });
-  const darkMat = new THREE.MeshPhysicalMaterial({ color: 0x080808, roughness: 0.12, clearcoat: 1, transparent: true });
+  const lacquer = new THREE.MeshPhysicalMaterial({ color: 0x1a2038, roughness: 0.28, clearcoat: 1, clearcoatRoughness: 0.05, transparent: true });
+  const darkMat = new THREE.MeshPhysicalMaterial({ color: 0x141a2e, roughness: 0.12, clearcoat: 1, transparent: true });
   const chrome = new THREE.MeshPhysicalMaterial({ color: 0xf4f4f4, metalness: 1, roughness: 0.07 });
   const satin = new THREE.MeshPhysicalMaterial({ color: 0xbdbdbd, metalness: 1, roughness: 0.34, clearcoat: 0.4 });
   const spunDir = spunAnisotropyTexture();
@@ -262,35 +266,35 @@ export async function createScene(canvas, { reducedMotion = false } = {}) {
   pig.rotation.y = -2.6;
   pigRoot.add(pig);
 
-  addTo(pig, new THREE.SphereGeometry(1, 96, 64), pigGlass, [0, 0, 0], [0, 0, 0], [1.3, 1.05, 1.08]);
-  const snoutGeo = new THREE.LatheGeometry([[0, 0.29], [0.2, 0.285], [0.31, 0.26], [0.36, 0.2], [0.375, 0.08], [0.37, -0.12]].map(([x, y]) => new THREE.Vector2(x, y)), 64).rotateZ(-Math.PI / 2);
+  addTo(pig, new THREE.SphereGeometry(1, 48, 32), pigGlass, [0, 0, 0], [0, 0, 0], [1.3, 1.05, 1.08]);
+  const snoutGeo = new THREE.LatheGeometry([[0, 0.29], [0.2, 0.285], [0.31, 0.26], [0.36, 0.2], [0.375, 0.08], [0.37, -0.12]].map(([x, y]) => new THREE.Vector2(x, y)), 32).rotateZ(-Math.PI / 2);
   addTo(pig, snoutGeo, pigGlass, [1.27, 0.02, 0]);
   addTo(pig, new THREE.SphereGeometry(0.055, 16, 12), darkMat, [1.56, 0.03, 0.11], [0, 0, 0], [0.6, 1.3, 1]);
   addTo(pig, new THREE.SphereGeometry(0.055, 16, 12), darkMat, [1.56, 0.03, -0.11], [0, 0, 0], [0.6, 1.3, 1]);
   addTo(pig, new THREE.SphereGeometry(0.065, 20, 16), darkMat, [0.98, 0.42, 0.42]);
   addTo(pig, new THREE.SphereGeometry(0.065, 20, 16), darkMat, [0.98, 0.42, -0.42]);
-  const earGeo = new THREE.SphereGeometry(0.24, 32, 24).scale(1, 1.25, 0.38).translate(0, 0.16, 0);
+  const earGeo = new THREE.SphereGeometry(0.24, 20, 14).scale(1, 1.25, 0.38).translate(0, 0.16, 0);
   addTo(pig, earGeo, pigGlass, [0.62, 0.86, 0.44], [0.45, 0.5, -0.5]);
   addTo(pig, earGeo, pigGlass, [0.62, 0.86, -0.44], [-0.45, -0.5, -0.5]);
   for (const [x, z] of [[0.62, 0.42], [0.62, -0.42], [-0.62, 0.42], [-0.62, -0.42]])
-    addTo(pig, new THREE.CapsuleGeometry(0.18, 0.28, 8, 24), pigGlass, [x, -0.9, z]);
-  addTo(pig, new THREE.TorusGeometry(0.1, 0.035, 12, 32, 5), pigGlass, [-1.33, 0.22, 0], [0, Math.PI / 2, 0]);
+    addTo(pig, new THREE.CapsuleGeometry(0.18, 0.28, 4, 14), pigGlass, [x, -0.9, z]);
+  addTo(pig, new THREE.TorusGeometry(0.1, 0.035, 8, 20, 5), pigGlass, [-1.33, 0.22, 0], [0, Math.PI / 2, 0]);
   addTo(pig, new THREE.BoxGeometry(0.62, 0.05, 0.1), darkMat, [0, 1.035, 0]);
   addTo(pig, new THREE.BoxGeometry(0.72, 0.03, 0.18), chrome, [0, 1.02, 0]);
 
   // intro coin, in pig-local space so it lines up with the slot (axis along z = edge-on to the slot)
-  const introCoin = addTo(pig, new THREE.CylinderGeometry(0.26, 0.26, 0.055, 64).rotateX(Math.PI / 2), usdcMats, [0, 0, 0], [0, 0, 0], [1, 1, 1], true);
+  const introCoin = addTo(pig, new THREE.CylinderGeometry(0.26, 0.26, 0.055, 32).rotateX(Math.PI / 2), usdcMats, [0, 0, 0], [0, 0, 0], [1, 1, 1], true);
   const INTRO = { delay: 0.55, fall: 0.8, sink: 0.42 }; // seconds
   const PIG_BOTTOM = -1.08; // lowest point of the feet, kept on the plinth while squashing
   let introAt = null; // clock time when the intro starts; null until the first visible frame
 
   // glow once the coin is in: the glass lights from within, a soft light inside, a halo behind
-  pigGlass.emissive = new THREE.Color(0xffffff);
+  pigGlass.emissive = new THREE.Color(0x2f4bff);
   pigGlass.emissiveIntensity = 0;
-  const pigLight = new THREE.PointLight(0xffffff, 0, 4.5, 2);
+  const pigLight = new THREE.PointLight(0x4a63ff, 0, 4.5, 2);
   pigLight.position.set(0, -0.35, 0);
   pigRoot.add(pigLight);
-  const haloMat = new THREE.SpriteMaterial({ map: radialTexture([[0, "rgba(255,255,255,1)"], [0.3, "rgba(255,255,255,.35)"], [1, "rgba(255,255,255,0)"]]), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+  const haloMat = new THREE.SpriteMaterial({ map: radialTexture([[0, "rgba(47,75,255,.9)"], [0.3, "rgba(47,75,255,.3)"], [1, "rgba(47,75,255,0)"]]), transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
   const halo = new THREE.Sprite(haloMat);
   halo.scale.set(6.2, 5.2, 1);
   halo.position.set(0, 0.05, -1.4);
@@ -298,9 +302,9 @@ export async function createScene(canvas, { reducedMotion = false } = {}) {
   pigRoot.add(halo);
 
   // black lacquer plinth with a soft contact shadow where the glass feet stand
-  const plinth = addTo(pigRoot, new THREE.CylinderGeometry(1.95, 1.95, 0.26, 128), lacquer, [0, -1.29, 0], [0, 0, 0], [1, 1, 1], true);
+  const plinth = addTo(pigRoot, new THREE.CylinderGeometry(1.95, 1.95, 0.26, 48), lacquer, [0, -1.29, 0], [0, 0, 0], [1, 1, 1], true);
   plinth.receiveShadow = true;
-  const contactMat = new THREE.MeshBasicMaterial({ map: radialTexture([[0, "rgba(0,0,0,.7)"], [0.5, "rgba(0,0,0,.3)"], [1, "rgba(0,0,0,0)"]]), transparent: true, depthWrite: false });
+  const contactMat = new THREE.MeshBasicMaterial({ map: radialTexture([[0, "rgba(20,26,46,.26)"], [0.5, "rgba(20,26,46,.1)"], [1, "rgba(20,26,46,0)"]]), transparent: true, depthWrite: false });
   addTo(pigRoot, new THREE.PlaneGeometry(3.4, 2.6), contactMat, [0, -1.155, 0], [-Math.PI / 2, 0, 0.5]);
   pigMats.push(contactMat);
 
@@ -308,10 +312,10 @@ export async function createScene(canvas, { reducedMotion = false } = {}) {
   const scaleRoot = new THREE.Group();
   scene.add(scaleRoot);
   const S = (geo, mat, p, r) => addTo(scaleRoot, geo, mat, p, r, [1, 1, 1], true);
-  S(new THREE.CylinderGeometry(0.75, 0.86, 0.12, 96), lacquer, [0, -1.55, 0]).receiveShadow = true;
-  S(new THREE.CylinderGeometry(0.42, 0.6, 0.1, 96), satin, [0, -1.44, 0]).receiveShadow = true;
-  S(new THREE.CylinderGeometry(0.04, 0.065, 2.4, 48), chrome, [0, -0.3, 0]);
-  S(new THREE.SphereGeometry(0.1, 48, 32), chrome, [0, 0.93, 0]);
+  S(new THREE.CylinderGeometry(0.75, 0.86, 0.12, 48), lacquer, [0, -1.55, 0]).receiveShadow = true;
+  S(new THREE.CylinderGeometry(0.42, 0.6, 0.1, 48), satin, [0, -1.44, 0]).receiveShadow = true;
+  S(new THREE.CylinderGeometry(0.04, 0.065, 2.4, 24), chrome, [0, -0.3, 0]);
+  S(new THREE.SphereGeometry(0.1, 24, 16), chrome, [0, 0.93, 0]);
   const beam = new THREE.Group();
   beam.position.y = 0.9;
   scaleRoot.add(beam);
@@ -320,13 +324,13 @@ export async function createScene(canvas, { reducedMotion = false } = {}) {
   addTo(beam, new THREE.SphereGeometry(0.055, 24, 16), chrome, [1.5, 0, 0]);
   addTo(beam, new THREE.ConeGeometry(0.045, 0.36, 24), chrome, [0, 0.26, 0]);
 
-  const panGeo = new THREE.LatheGeometry([new THREE.Vector2(0, 0), new THREE.Vector2(0.45, 0.015), new THREE.Vector2(0.6, 0.08), new THREE.Vector2(0.64, 0.13), new THREE.Vector2(0.62, 0.135)], 96);
+  const panGeo = new THREE.LatheGeometry([new THREE.Vector2(0, 0), new THREE.Vector2(0.45, 0.015), new THREE.Vector2(0.6, 0.08), new THREE.Vector2(0.64, 0.13), new THREE.Vector2(0.62, 0.135)], 48);
   const panMat = new THREE.MeshPhysicalMaterial({ color: 0xe8e8e8, metalness: 1, roughness: 0.16, side: THREE.DoubleSide });
   const panL = S(panGeo, panMat); panL.receiveShadow = true;
   const panR = S(panGeo, panMat); panR.receiveShadow = true;
   const strGeo = new THREE.BufferGeometry();
   strGeo.setAttribute("position", new THREE.BufferAttribute(new Float32Array(12 * 3), 3));
-  scaleRoot.add(new THREE.LineSegments(strGeo, new THREE.LineBasicMaterial({ color: 0xbdbdbd, transparent: true, opacity: 0.7 })));
+  scaleRoot.add(new THREE.LineSegments(strGeo, new THREE.LineBasicMaterial({ color: 0x8a93a8, transparent: true, opacity: 0.55 })));
 
   const ethTop = new THREE.ConeGeometry(0.3, 0.5, 4, 1).translate(0, 0.25, 0);
   const ethBot = new THREE.ConeGeometry(0.3, 0.32, 4, 1).rotateX(Math.PI).translate(0, -0.16, 0);
@@ -334,13 +338,13 @@ export async function createScene(canvas, { reducedMotion = false } = {}) {
     const g = new THREE.Group();
     for (const geo of [ethTop, ethBot]) {
       const m = new THREE.Mesh(geo, mat); m.castShadow = true; g.add(m);
-      if (edges) g.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.45 })));
+      if (edges) g.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: 0x141a2e, transparent: true, opacity: 0.35 })));
     }
     return g;
   };
   // long = polished silver, short = black obsidian: the same object, inverted
   const spotEth = makeEth(new THREE.MeshPhysicalMaterial({ color: 0xffffff, metalness: 1, roughness: 0.05, flatShading: true }));
-  const perpEth = makeEth(new THREE.MeshPhysicalMaterial({ color: 0x0a0a0a, metalness: 0, roughness: 0.05, clearcoat: 1, flatShading: true }), true);
+  const perpEth = makeEth(new THREE.MeshPhysicalMaterial({ color: 0x2f4bff, metalness: 0, roughness: 0.08, clearcoat: 1, flatShading: true }), true);
   scaleRoot.add(spotEth, perpEth);
 
   const labelSpot = labelSprite("Spot ETH", "long   Δ +1", "fill");
@@ -352,7 +356,7 @@ export async function createScene(canvas, { reducedMotion = false } = {}) {
   scaleRoot.add(labelSpot, labelPerp, labelNet, labelFund, labelDrift, labelFix);
 
   const FUND = 16;
-  const fundGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.028, 48).rotateX(Math.PI / 2);
+  const fundGeo = new THREE.CylinderGeometry(0.12, 0.12, 0.028, 24).rotateX(Math.PI / 2);
   const fundCoins = Array.from({ length: FUND }, () => { const m = addTo(scaleRoot, fundGeo, usdcMats, [0, 0, 0], [0, 0, 0], [1, 1, 1], true); m.visible = false; return m; });
 
   // ------------------------------------------------ state
@@ -361,15 +365,18 @@ export async function createScene(canvas, { reducedMotion = false } = {}) {
   let onTick = null;
   const clock = new THREE.Clock();
   const tmpLook = new THREE.Vector3();
-  const cHero = new THREE.Color("#2e2e2e"), cInside = new THREE.Color("#1a1a1a"), cSpec = new THREE.Color("#121212");
+  // Paper tones for the three chapters of the backdrop, instead of three greys.
+  const cHero = new THREE.Color("#ffffff"), cInside = new THREE.Color("#f2ece2"), cSpec = new THREE.Color("#e9e3d7");
 
   function resize() {
     const w = canvas.clientWidth, h = canvas.clientHeight;
     if (!w || !h) return;
     mobile = w < 820;
     aspect = w / h;
-    const dpr = Math.min(devicePixelRatio, mobile ? 1.5 : 1.75);
-    key.shadow.mapSize.setScalar(mobile ? 1024 : 2048);
+    // Each step up in pixel ratio costs the square. 1.25/1.5 is still sharp on a
+    // retina panel and roughly halves the fragment work against 1.5/1.75.
+    const dpr = Math.min(devicePixelRatio, mobile ? 1.25 : 1.5);
+    key.shadow.mapSize.setScalar(mobile ? 512 : 1024);
     renderer.setPixelRatio(dpr);
     renderer.setSize(w, h, false);
     camera.aspect = aspect;
@@ -382,9 +389,24 @@ export async function createScene(canvas, { reducedMotion = false } = {}) {
   resize();
   addEventListener("resize", resize);
 
+  // Transmission is the most expensive thing in this scene: while any
+  // transmissive material is visible, three.js renders the entire scene a second
+  // time into a transmission target, every frame. The piggy bank is gone by
+  // t = 1.55 and never comes back, so for roughly seven eighths of the scroll
+  // that second pass was being paid for nothing.
+  //
+  // Toggling the property recompiles the shader, so it is only written when the
+  // state actually flips, never per frame.
+  let glassOn = true;
   function setPigOpacity(o) {
     for (const m of pigMats) m.opacity = o;
-    pigRoot.visible = o > 0.01;
+    const vis = o > 0.01;
+    pigRoot.visible = vis;
+    if (vis !== glassOn) {
+      glassOn = vis;
+      pigGlass.transmission = vis ? 1 : 0;
+      pigGlass.needsUpdate = true;
+    }
   }
 
   function update(dt, time) {
@@ -454,7 +476,7 @@ export async function createScene(canvas, { reducedMotion = false } = {}) {
     const glowK = rise * (0.2 * breathe + 0.8 * decay) * pigFade;
     pigGlass.emissiveIntensity = 0.32 * glowK;
     pigLight.intensity = 9 * glowK;
-    haloMat.opacity = 0.22 * glowK;
+    haloMat.opacity = 0.3 * glowK;
     halo.visible = glowK > 0.002;
 
     // balance scale
@@ -518,22 +540,40 @@ export async function createScene(canvas, { reducedMotion = false } = {}) {
     labelNet.position.set(0, 1.95, 0.2);
     labelFund.position.set(1.15, -1.0, 1.0);
 
-    // funding: coins arc from the short leg into a stack in front of the scale (5.3 → 6.05)
+    // funding: the stack simply builds in front of the scale (5.3 → 6.05).
+    // Each coin used to fly out of the short leg on a sine arc, which read as
+    // busy and meant every coin was a moving object for the whole span. Now they
+    // drop the last short distance into place and stop, which is calmer and far
+    // less work per frame.
     const fu = seg(t, 5.3, 6.05) * (FUND + 1.5);
-    const start = new THREE.Vector3(panR.position.x, panR.position.y + 0.3, 0);
     fundCoins.forEach((m, i) => {
       const f = clamp01((fu - i) / 1.5);
       m.visible = f > 0;
       if (!m.visible) return;
-      const e = easeInOut(f);
-      m.position.set(lerp(start.x, 0, e), lerp(start.y, -1.47 + i * 0.03, e) + Math.sin(Math.PI * e) * 0.9, lerp(start.z, 1.0, e));
-      m.rotation.set(lerp(0, Math.PI / 2, e), 0, (1 - e) * 8);
+      const e = easeOut(f);
+      m.position.set(0, -1.47 + i * 0.03 + (1 - e) * 0.55, 1.0);
+      m.rotation.set(Math.PI / 2, 0, 0);
     });
 
     if (onTick) onTick({ t, price, spotPnl: SPOT_ETH * (price - BASE_PRICE) });
   }
 
-  let raf = 0, last = performance.now();
+  // At rest the only thing moving is the decorative idle sway, and that does not
+  // need 60 frames a second. Scrolling, the intro drop and the beam spring all
+  // get every frame; idle alone gets half of them. The scene still breathes, at
+  // half the cost of standing still.
+  const IDLE_INTERVAL = 1 / 30;
+  let raf = 0, last = performance.now(), idleAccum = 0;
+
+  function busy(time) {
+    if (Math.abs(tTarget - tNow) > 0.0005) return true;  // scrolling
+    if (Math.abs(thetaV) > 0.002) return true;           // beam still settling
+    if (introAt !== null && introAt > -1e8) {            // intro drop still running
+      if (time - introAt < INTRO.delay + INTRO.fall + INTRO.sink + 2.2) return true;
+    }
+    return false;
+  }
+
   function frame(now) {
     raf = requestAnimationFrame(frame);
     const dt = Math.min(0.1, (now - last) / 1000); last = now;
@@ -543,7 +583,17 @@ export async function createScene(canvas, { reducedMotion = false } = {}) {
     if (!Number.isFinite(tNow)) tNow = tTarget; // self-heal: one bad value must never freeze the story
     tNow = reducedMotion ? tTarget : tNow + (tTarget - tNow) * (1 - Math.exp(-Math.max(0, dt) * 4));
     if (Math.abs(tTarget - tNow) < 0.0005) tNow = tTarget;
-    update(dt, clock.getElapsedTime());
+
+    const time = clock.getElapsedTime();
+    if (busy(time)) {
+      idleAccum = 0;
+    } else {
+      idleAccum += dt;
+      if (idleAccum < IDLE_INTERVAL) return;
+      idleAccum = 0;
+    }
+
+    update(dt, time);
     renderer.render(scene, camera);
   }
   raf = requestAnimationFrame(frame);

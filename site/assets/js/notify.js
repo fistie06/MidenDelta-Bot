@@ -1,4 +1,4 @@
-// Launch notification for the High Finance learning platform (plus the 20% bot offer). Opens by itself once when a visitor enters the site
+// Launch notification for the High Finance learning platform. Opens by itself once when a visitor enters the site
 // (arrival from another site, a link or an app like Instagram), not on every page change, and without
 // storing anything on the device: "entry" is read from the referrer. Any [data-notify] button opens it too.
 import { CONFIG } from "./config.js";
@@ -14,7 +14,7 @@ function html() {
       <div class="ask">
         <span class="deal">Free</span>
         <h2 id="notify-title">High Finance, explained. Launching soon.</h2>
-        <p>Our learning platform breaks down how hedge funds actually make money, with real data and no fluff. Leave your email and we'll tell you the day it goes live. Early members also get 20% off the bot at launch.</p>
+        <p>We break down how hedge funds actually make money, with real data and no fluff. Leave your email and we'll tell you the day it goes live.</p>
         <form novalidate>
           <input type="email" name="email" autocomplete="email" inputmode="email" placeholder="you@email.com" aria-label="Email address" required />
           <button class="btn btn-primary" type="submit">Notify me at launch</button>
@@ -25,18 +25,27 @@ function html() {
       <div class="done" hidden tabindex="-1">
         <span class="deal">✓</span>
         <h2 style="margin-top:16px">You're on the list.</h2>
-        <p>We'll email you the day the platform launches, with your 20% bot code. Until then, scroll through the first lesson: how a cash and carry works.</p>
+        <p>We'll email you the day the platform launches. Until then, scroll through the first lesson: how a cash and carry works.</p>
+        <div class="second-ask">
+          <h3>One more thing</h3>
+          <p>We're considering publishing this strategy as a ready-to-deploy bot you run on your own account. Separate list, separate email — only if you want it.</p>
+          <button type="button" class="btn btn-ghost btn-sm" data-bot-interest>Yes, keep me posted about the bot</button>
+          <p class="err bot-err" role="alert"></p>
+        </div>
       </div>
     </div>
   </div>`;
 }
 
-async function send(email) {
+async function send(email, kind) {
   if (!CONFIG.formEndpoint) throw new Error("no form endpoint");
+  const of = kind === "bot"
+    ? { form: "bot-interest", _subject: `Bot interest: ${email}`, interest: "Ready-to-deploy bot" }
+    : { form: "platform-launch", _subject: `Platform launch notify: ${email}`, interest: "High Finance learning platform" };
   const res = await fetch(CONFIG.formEndpoint, {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ form: "platform-launch", _subject: `Platform launch notify: ${email}`, email, interest: "High Finance learning platform", offer: "20% off the bot at launch" }),
+    body: JSON.stringify({ ...of, email }),
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
 }
@@ -49,16 +58,22 @@ export function initNotify(page) {
   const err = form.querySelector(".err");
   let prevFocus = null;
 
+  // The story canvas keeps rendering behind this dialog otherwise. home.js
+  // listens and stops the scene while it is open.
+  const announce = (open) => dispatchEvent(new CustomEvent("notify:toggle", { detail: { open } }));
+
   const open = () => {
     if (!el.hidden) return;
     prevFocus = document.activeElement;
     el.hidden = false;
     requestAnimationFrame(() => el.classList.add("open"));
+    announce(true);
     // no auto-focus on touch screens: the keyboard would cover the offer
     if (!matchMedia("(pointer: coarse)").matches) input.focus({ preventScroll: true });
   };
   const close = () => {
     el.classList.remove("open");
+    announce(false);
     setTimeout(() => (el.hidden = true), 300);
     prevFocus?.focus?.({ preventScroll: true });
   };
@@ -70,13 +85,34 @@ export function initNotify(page) {
     if (e.target.closest("[data-notify]")) { e.preventDefault(); open(); }
   });
 
+  let signedUpAs = "";
+
+  // Interest in the bot is recorded as its own submission under its own form
+  // name, so the two lists stay separate — the platform list is the one people
+  // actually opted into.
+  el.querySelector("[data-bot-interest]").addEventListener("click", async (e) => {
+    const b = e.currentTarget;
+    const be = el.querySelector(".bot-err");
+    b.disabled = true; b.textContent = "Sending…"; be.textContent = "";
+    try {
+      await send(signedUpAs, "bot");
+      b.textContent = "Noted — we'll be in touch.";
+    } catch (x) {
+      console.error(x);
+      b.disabled = false; b.textContent = "Yes, keep me posted about the bot";
+      be.textContent = "That didn't go through. Please try again in a moment.";
+    }
+  });
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (!input.checkValidity()) { err.textContent = "Enter a valid email address."; input.focus(); return; }
     const btn = form.querySelector("button");
     btn.disabled = true; btn.textContent = "Sending…"; err.textContent = "";
     try {
-      await send(input.value.trim());
+      const addr = input.value.trim();
+      await send(addr, "platform");
+      signedUpAs = addr;
       el.querySelector(".ask").hidden = true;
       const done = el.querySelector(".done");
       done.hidden = false; done.focus({ preventScroll: true });

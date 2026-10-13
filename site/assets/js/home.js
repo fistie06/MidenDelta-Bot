@@ -38,12 +38,15 @@ const tForScroll = () => {
   return Number.isFinite(t) ? Math.min(T_MAX, Math.max(0, t)) : 0;
 };
 
-// Copy eases in; items marked data-blur also resolve from soft focus, like a lens pulling focus.
+// Copy eases in on opacity and translate only. The soft-focus pull this used to
+// do was a filter: blur() rewritten every scroll frame, which re-rasterizes each
+// element's layer at a new radius — the single biggest cause of the scroll
+// stutter. The reveal reads the same without it.
 const ease = (x) => 1 - Math.pow(1 - x, 3);
 const fade = (t, a, b, span) => {
   const inK = ease(Math.min(1, Math.max(0, (t - (a - span)) / span)));
   const outK = Math.min(1, Math.max(0, (t - b) / 0.22));
-  return { o: inK * (1 - outK), dy: (1 - inK) * 26 - outK * 22, blur: (1 - inK) * 10 + outK * 6 };
+  return { o: inK * (1 - outK), dy: (1 - inK) * 26 - outK * 22 };
 };
 
 let scene = null;
@@ -56,8 +59,7 @@ createChart(document.getElementById("chart"), "assets/data/eth-carry.json")
 function renderOverlay(t) {
   for (const f of fades) {
     const { el, a, blur } = f;
-    const { o, dy, blur: bl } = fade(t, a, outOf(f), blur ? 0.34 : 0.24);
-    el.style.setProperty("--blur", `${(blur ? bl : bl * 0.4).toFixed(2)}px`);
+    const { o, dy } = fade(t, a, outOf(f), blur ? 0.34 : 0.24);
     el.style.opacity = o.toFixed(3);
     el.style.visibility = o > 0.001 ? "visible" : "hidden";
     el.style.setProperty("--dy", `${dy.toFixed(1)}px`);
@@ -118,7 +120,10 @@ if (hasWebGL()) {
       scene = s;
       scene.onTick(tick);
       scene.jump(tForScroll());
-      new IntersectionObserver(([e]) => scene.setVisible(e.isIntersecting)).observe(story);
+      let onScreen = true, dialogOpen = false;
+      const sync = () => scene.setVisible(onScreen && !dialogOpen);
+      new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; sync(); }).observe(story);
+      addEventListener("notify:toggle", (e) => { dialogOpen = e.detail.open; sync(); });
     })
     .catch((err) => { console.error(err); document.documentElement.classList.add("no-webgl"); });
 } else {

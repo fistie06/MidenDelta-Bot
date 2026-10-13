@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>MidenDelta: High Finance, explained</title>
-  <meta name="description" content="A free High Finance learning platform: how hedge funds actually make money, explained with real data. Then run the strategy yourself with the MidenDelta bot, on your own account." />
+  <meta name="description" content="A free High Finance learning platform: how hedge funds actually make money, explained with real data. First lesson: a delta-neutral ETH cash and carry." />
   <meta name="theme-color" content="#000000" />
   <meta property="og:title" content="MidenDelta: High Finance, explained" />
   <meta property="og:description" content="How hedge funds actually make money, explained with real data. Learn it free, then run it yourself on your own account." />
@@ -22,7 +22,7 @@
 </head>
 <body>
 <main id="main">
-  <section class="story" id="story" aria-label="How the bot works">
+  <section class="story" id="story" aria-label="How a cash and carry works">
     <div class="story-stage">
       <div class="stage-fallback" aria-hidden="true" data-logo></div>
       <canvas id="scene" aria-hidden="true"></canvas>
@@ -31,8 +31,8 @@
       <div class="steps">
         <div class="step step-hero" data-in="-1" data-out="0.45">
           <h1>High Finance, explained.</h1>
-          <p class="hero-claim">Learn how hedge funds actually make money. Then run the strategy yourself, on your own account.</p>
-          <p>Our free learning platform launches soon. Scroll for lesson one: the cash and carry.</p>
+          <p class="hero-claim">Learn how hedge funds actually make money — one strategy at a time, with real market data.</p>
+          <p>Our free learning platform launches soon. Scroll for lesson one: the cash and carry, and why it is market neutral.</p>
           <div class="hero-actions">
             <button type="button" class="btn btn-primary" data-notify>Notify me at launch</button>
             <a class="btn btn-ghost" href="learn.html">What you'll learn</a>
@@ -42,12 +42,12 @@
         <div class="step" data-in="0.75" data-out="1.45">
           <span class="eyebrow"><b>01</b>Your account</span>
           <h2>Funds stay in your Hyperliquid account.</h2>
-          <p>The bot connects with an API wallet. It can place orders. It cannot withdraw.</p>
+          <p>Everything happens on one exchange account. Spot and perpetual futures sit side by side, which is what makes the whole thing possible.</p>
         </div>
 
         <div class="step" data-in="2.1" data-out="2.95">
           <span class="eyebrow"><b>02</b>Long spot</span>
-          <h2>The bot buys spot ETH.</h2>
+          <h2>Step one: buy spot ETH.</h2>
           <p>75% of your capital goes into spot ETH. Exposure: <span class="mono">Δ +1</span>.</p>
         </div>
 
@@ -78,7 +78,7 @@
 
         <div class="step" data-in="6.2" data-out="7.05">
           <span class="eyebrow"><b>06</b>Automated</span>
-          <h2>The bot keeps it at zero.</h2>
+          <h2>Keeping it at zero.</h2>
           <p>It watches price, delta and margin around the clock. When ETH moves and the hedge drifts more than 2%, it adjusts the short with limit orders until delta is back at zero.</p>
           <p>When a rally eats into the short's margin, it sells part of the spot gain and moves it over. No manual steps.</p>
           <div class="chips"><span class="chip">24/7</span><span class="chip">±2% band</span><span class="chip">Maker orders</span></div>
@@ -93,13 +93,13 @@
         <div class="spec-col">
           <div class="spec-head" data-in="7.75" data-out="99" data-blur>
             <span class="eyebrow"><b>07</b>Specifications</span>
-            <h2>Bot 01, in numbers.</h2>
+            <h2>The strategy, in numbers.</h2>
           </div>
           <ol class="spec-list">
             <li data-in="8.2" data-out="99" data-out-m="9.15" data-blur><span class="n">01</span><h3>Capital efficiency <span class="mono">0.75×</span></h3><p>At the 3× short cap, 75% of capital sits in spot and earns funding: <span class="mono">1 ÷ (1 + 1/3)</span>. The other 25% is margin for the short.</p></li>
             <li data-in="9.15" data-out="99" data-out-m="10.1" data-blur><span class="n">02</span><h3>Post-only limit orders</h3><p>Entries and rebalances go out as add-liquidity-only orders, so you pay maker fees: 0.015% on perps and 0.040% on spot instead of 0.045% and 0.070% (Hyperliquid base tier).</p></li>
-            <li data-in="10.1" data-out="99" data-out-m="11.05" data-blur><span class="n">03</span><h3>Event-driven rebalancing</h3><p>No fixed schedule. The bot trades only when delta drifts outside a ±2% band or margin drops below its floor, so it doesn't pay fees to stand still.</p></li>
-            <li data-in="11.05" data-out="99" data-blur><span class="n">04</span><h3>Liquidation distance <span class="mono">~31%</span></h3><p>At 3×, ETH has to rise about 31% before the short is liquidated. The bot moves spot gains into margin long before that.</p></li>
+            <li data-in="10.1" data-out="99" data-out-m="11.05" data-blur><span class="n">03</span><h3>Event-driven rebalancing</h3><p>No fixed schedule. You trade only when delta drifts outside a ±2% band or margin drops below its floor, so you don't pay fees to stand still.</p></li>
+            <li data-in="11.05" data-out="99" data-blur><span class="n">04</span><h3>Liquidation distance <span class="mono">~31%</span></h3><p>At 3×, ETH has to rise about 31% before the short is liquidated. Spot gains move into margin long before that.</p></li>
           </ol>
         </div>
       </div>
@@ -120,7 +120,7 @@
       <dl class="terms three reveal" data-delay="1">
         <div class="term"><dt>01 · Foundations</dt><dd>How markets really work<small>Spot, futures and perps, leverage, margin, funding. The vocabulary every strategy builds on.</small></dd></div>
         <div class="term"><dt>02 · Strategies</dt><dd>What hedge funds trade<small>Cash and carry, basis trades, funding arbitrage, market neutral. How each one earns, and how each one fails.</small></dd></div>
-        <div class="term"><dt>03 · Practice</dt><dd>Run it yourself<small>Turn a strategy into a bot on your own account, with the MidenDelta bot as the worked example.</small></dd></div>
+        <div class="term"><dt>03 · Practice</dt><dd>Run it yourself<small>Every strategy comes with the numbers behind it, so you can check the maths yourself instead of taking our word for it.</small></dd></div>
       </dl>
       <div class="hero-actions reveal" data-delay="2">
         <button type="button" class="btn btn-primary" data-notify>Notify me at launch</button>
@@ -129,34 +129,17 @@
     </div>
   </section>
 
-  <section class="section" id="how" style="padding-top:0">
-    <div class="wrap">
-      <div class="section-head reveal">
-        <span class="eyebrow">The bot</span>
-        <h2>From lesson to live, in three steps.</h2>
-      </div>
-      <dl class="terms three reveal" data-delay="1">
-        <div class="term"><dt>01 · Subscribe</dt><dd>Licence key<small>Download the bot. Cancel anytime; it winds down without leaving you half-hedged.</small></dd></div>
-        <div class="term"><dt>02 · Install</dt><dd>Your machine<small>Desktop app, Docker, or a small VPS if you want it running 24/7.</small></dd></div>
-        <div class="term"><dt>03 · Connect</dt><dd>API wallet<small>Create a trade-only key on Hyperliquid, set size and leverage, start.</small></dd></div>
-        <div class="term"><dt>You need</dt><dd>USDC on Hyperliquid<small>Hyperliquid's terms and regional restrictions apply to your account.</small></dd></div>
-        <div class="term"><dt>Custody</dt><dd>None<small>We never receive your funds or your keys, and we never trade for you.</small></dd></div>
-        <div class="term"><dt>Price</dt><dd>Flat monthly fee<small>No performance fee, no cut of your trades. <a href="pricing.html">Plans</a></small></dd></div>
-      </dl>
-    </div>
-  </section>
-
   <section class="section" style="padding-top:0">
     <div class="wrap">
       <div class="section-head reveal">
-        <span class="eyebrow">Roadmap</span>
-        <h2>What ships next.</h2>
+        <span class="eyebrow">The curriculum</span>
+        <h2>What comes next.</h2>
       </div>
       <div class="roadmap">
-        <article class="road reveal" data-delay="1"><span class="status live">In development</span><span class="idx">BOT 01</span><h3>ETH cash &amp; carry</h3><p>Spot ETH plus an equal ETH-PERP short. Collects funding at delta 0.</p></article>
-        <article class="road reveal locked" data-delay="2"><span class="status">In research</span><span class="idx">BOT 02</span><h3>Funding rotator</h3><p>Scans a basket of coins and moves the carry to the highest funding, net of switching costs.</p></article>
-        <article class="road reveal locked" data-delay="3"><span class="status">Planned</span><span class="idx">MARGIN</span><h3>Portfolio margin</h3><p>Spot as collateral for the short, so close to 100% of capital earns funding.</p></article>
-        <article class="road reveal locked" data-delay="3"><span class="status">Planned</span><span class="idx">VENUES</span><h3>Multi-venue</h3><p>The same carry across venues, to spread platform risk.</p></article>
+        <article class="road reveal" data-delay="1"><span class="status live">First lesson</span><span class="idx">01</span><h3>ETH cash &amp; carry</h3><p>Spot ETH plus an equal ETH-PERP short. Earns the funding rate at delta 0. The one you just scrolled through.</p></article>
+        <article class="road reveal locked" data-delay="2"><span class="status">In writing</span><span class="idx">02</span><h3>Funding rotation</h3><p>Why the highest funding rate is rarely the best trade once switching costs are in the maths.</p></article>
+        <article class="road reveal locked" data-delay="3"><span class="status">Planned</span><span class="idx">03</span><h3>Margin and liquidation</h3><p>What actually liquidates a hedged position, and why it is almost never the direction of the market.</p></article>
+        <article class="road reveal locked" data-delay="3"><span class="status">Planned</span><span class="idx">04</span><h3>Where the risk really sits</h3><p>Custody, bridges and venue risk — the exposures that survive a perfect hedge.</p></article>
       </div>
     </div>
   </section>
@@ -167,10 +150,9 @@
         <div>
           <span class="eyebrow">Launching soon</span>
           <h2>Be there on day one.</h2>
-          <p>Leave your email and we'll tell you the day the learning platform goes live. Early members also get 20% off the bot at launch.</p>
+          <p>Leave your email and we'll tell you the day the learning platform goes live. Nothing else — no newsletter you didn't ask for.</p>
           <div class="actions">
             <button type="button" class="btn btn-primary" data-notify>Notify me at launch</button>
-            <a class="btn btn-ghost" href="pricing.html">Bot plans</a>
           </div>
         </div>
         <div class="cta-mark" data-logo role="img" aria-label="MidenDelta mark: a delta inside a circle"></div>

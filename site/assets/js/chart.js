@@ -6,9 +6,9 @@ const WINDOW = 64; // candles on screen
 const START_VALUE = 10_000;
 const FONT = '"Geist Mono", ui-monospace, monospace';
 const C = {
-  grid: "rgba(255,255,255,.055)", axis: "rgba(255,255,255,.42)", text: "rgba(255,255,255,.62)", bright: "#f2f2f2",
-  up: "#e9e9e9", down: "#4a4a4a", downEdge: "#8c8c8c", line: "#ffffff", fill: "rgba(255,255,255,.08)",
-  fundUp: "rgba(255,255,255,.55)", fundDown: "rgba(255,255,255,.2)", tag: "#ffffff", tagText: "#000",
+  grid: "rgba(20,26,46,.08)", axis: "rgba(20,26,46,.45)", text: "rgba(20,26,46,.6)", bright: "#141a2e",
+  up: "#141a2e", down: "#c9cedb", downEdge: "#8a93a8", line: "#2f4bff", fill: "rgba(47,75,255,.09)",
+  fundUp: "rgba(47,75,255,.5)", fundDown: "rgba(20,26,46,.16)", tag: "#2f4bff", tagText: "#ffffff",
 };
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const usd = (v, dp = 0) => "$" + v.toLocaleString("en-US", { minimumFractionDigits: dp, maximumFractionDigits: dp });
@@ -81,7 +81,7 @@ export async function createChart(canvas, url) {
       if (!near(y, yV(lastR.v))) g.fillText((v / 1000).toFixed(v % 1000 ? 1 : 0) + "k", plotW + 8, y);
     }
     // pane separators and the right axis line
-    g.strokeStyle = "rgba(255,255,255,.12)";
+    g.strokeStyle = "rgba(20,26,46,.14)";
     for (const y of [yVal0 - 4, yFund0 - 4]) { g.beginPath(); g.moveTo(0, Math.round(y) + 0.5); g.lineTo(w, Math.round(y) + 0.5); g.stroke(); }
     g.beginPath(); g.moveTo(Math.round(plotW) + 0.5, top); g.lineTo(Math.round(plotW) + 0.5, bottom); g.stroke();
 
@@ -122,16 +122,16 @@ export async function createChart(canvas, url) {
       g.fillStyle = r.f >= 0 ? C.fundUp : C.fundDown;
       g.fillRect(x(i) - bw / 2, Math.min(y, yF0), bw, Math.max(1, Math.abs(y - yF0)));
     });
-    g.strokeStyle = "rgba(255,255,255,.18)"; g.beginPath(); g.moveTo(0, Math.round(yF0) + 0.5); g.lineTo(plotW, Math.round(yF0) + 0.5); g.stroke();
+    g.strokeStyle = "rgba(20,26,46,.2)"; g.beginPath(); g.moveTo(0, Math.round(yF0) + 0.5); g.lineTo(plotW, Math.round(yF0) + 0.5); g.stroke();
 
     // last-value tags on the axis
     const tag = (y, label, inverted) => {
-      g.fillStyle = inverted ? C.tag : "rgba(255,255,255,.14)";
+      g.fillStyle = inverted ? C.tag : "rgba(20,26,46,.1)";
       g.fillRect(plotW + 1, y - 9, axisW - 1, 18);
       g.fillStyle = inverted ? C.tagText : C.bright; g.textAlign = "left";
       g.fillText(label, plotW + 6, y);
     };
-    g.setLineDash([2, 3]); g.strokeStyle = "rgba(255,255,255,.35)";
+    g.setLineDash([2, 3]); g.strokeStyle = "rgba(47,75,255,.45)";
     g.beginPath(); g.moveTo(0, Math.round(yP(lastR.c)) + 0.5); g.lineTo(plotW, Math.round(yP(lastR.c)) + 0.5); g.stroke();
     g.setLineDash([]);
     tag(yP(lastR.c), lastR.c.toLocaleString("en-US", { maximumFractionDigits: 0 }), true);
