@@ -28,9 +28,12 @@ function html() {
         <p>We'll email you the day the platform launches. Until then, scroll through the first lesson: how a cash and carry works.</p>
         <div class="second-ask">
           <h3>One more thing</h3>
-          <p>We're considering publishing this strategy as a ready-to-deploy bot you run on your own account. Separate list, separate email — only if you want it.</p>
-          <button type="button" class="btn btn-ghost btn-sm" data-bot-interest>Yes, keep me posted about the bot</button>
-          <p class="err bot-err" role="alert"></p>
+          <p>We're considering also publishing this strategy as a ready-to-deploy bot you run on your own account. If that's something you'd be interested in, leave an email here — separate list, and you can use a different address.</p>
+          <form class="bot-form" novalidate>
+            <input type="email" name="botEmail" autocomplete="email" inputmode="email" placeholder="you@email.com" aria-label="Email address for bot updates" required />
+            <button class="btn btn-ghost" type="submit">Keep me posted</button>
+            <p class="err bot-err" role="alert"></p>
+          </form>
         </div>
       </div>
     </div>
@@ -87,20 +90,27 @@ export function initNotify(page) {
 
   let signedUpAs = "";
 
-  // Interest in the bot is recorded as its own submission under its own form
-  // name, so the two lists stay separate — the platform list is the one people
-  // actually opted into.
-  el.querySelector("[data-bot-interest]").addEventListener("click", async (e) => {
-    const b = e.currentTarget;
-    const be = el.querySelector(".bot-err");
-    b.disabled = true; b.textContent = "Sending…"; be.textContent = "";
+  // Interest in the bot is its own submission under its own form name, with its
+  // own address: someone may well want course mail at one address and a product
+  // announcement at another, and the two lists have to stay separable anyway.
+  const botForm = el.querySelector(".bot-form");
+  const botInput = botForm.querySelector("input");
+  const botErr = el.querySelector(".bot-err");
+
+  botForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!botInput.checkValidity()) {
+      botErr.textContent = "Enter a valid email address."; botInput.focus(); return;
+    }
+    const b = botForm.querySelector("button");
+    b.disabled = true; b.textContent = "Sending…"; botErr.textContent = "";
     try {
-      await send(signedUpAs, "bot");
-      b.textContent = "Noted — we'll be in touch.";
+      await send(botInput.value.trim(), "bot");
+      botForm.innerHTML = '<p class="bot-done">Noted — we\'ll let you know.</p>';
     } catch (x) {
       console.error(x);
-      b.disabled = false; b.textContent = "Yes, keep me posted about the bot";
-      be.textContent = "That didn't go through. Please try again in a moment.";
+      b.disabled = false; b.textContent = "Keep me posted";
+      botErr.textContent = "That didn't go through. Please try again in a moment.";
     }
   });
 
@@ -113,6 +123,7 @@ export function initNotify(page) {
       const addr = input.value.trim();
       await send(addr, "platform");
       signedUpAs = addr;
+      botInput.value = addr;
       el.querySelector(".ask").hidden = true;
       const done = el.querySelector(".done");
       done.hidden = false; done.focus({ preventScroll: true });

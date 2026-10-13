@@ -477,8 +477,12 @@ strong { font-weight: 500; color: var(--text); }
 .second-ask { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--line); }
 .second-ask h3 { font-size: 15px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
 .second-ask p { font-size: 14px; color: var(--text-2); margin: 0 0 14px; }
+.second-ask .bot-form { display: grid; gap: 8px; }
+.second-ask input[type=email] { min-height: 48px; border-radius: 12px; border: 1px solid var(--line-strong); background: var(--paper); color: var(--ink); padding: 0 14px; font: inherit; font-size: 16px; }
+.second-ask input[type=email]:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 .second-ask .btn { width: 100%; }
 .second-ask .err:empty { display: none; }
+.second-ask .bot-done { font-size: 14px; color: var(--accent); margin: 0; font-weight: 500; }
 
 /* ---------------------------------------------------------------- phones
    The story is a scroll-driven stage: on a phone the copy sits over the canvas
